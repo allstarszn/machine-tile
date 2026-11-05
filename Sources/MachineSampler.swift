@@ -310,11 +310,24 @@ struct ClaudeProcesses {
 }
 
 enum ProcessScanner {
+    static let virtualMachine = "Virtual machine"
+
+    /// A virtual machine runs as a macOS system process, so it never shows under the app
+    /// that started it. With Docker open, that memory is Docker's.
+    static func foldVirtualMachine(_ apps: [String: UInt64]) -> [String: UInt64] {
+        var apps = apps
+        if apps["Docker"] != nil, let vm = apps.removeValue(forKey: virtualMachine) {
+            apps["Docker", default: 0] += vm
+        }
+        return apps
+    }
+
     /// The name you would close it by, or nil for anything that is not yours to close.
     /// A helper counts toward its app, so Chrome's renderers add up to one Chrome.
     static func appName(path: String) -> String? {
         if isClaudeCode(path) { return "Claude Code" }
         if path.hasSuffix("/node") { return "Node tools" }
+        if path.hasSuffix("com.apple.Virtualization.VirtualMachine") { return virtualMachine }
         guard !path.hasPrefix("/System/"), let end = path.range(of: ".app/") else { return nil }
         return (String(path[..<end.lowerBound]) as NSString).lastPathComponent
     }
@@ -351,7 +364,7 @@ enum ProcessScanner {
         return ClaudeProcesses(count: footprints.count,
                                totalFootprintBytes: footprints.values.reduce(0, +),
                                footprintByPid: footprints,
-                               topApps: apps.map { AppUse(name: $0.key, bytes: $0.value) }
+                               topApps: foldVirtualMachine(apps).map { AppUse(name: $0.key, bytes: $0.value) }
                                    .sorted { $0.bytes > $1.bytes }.prefix(4).map { $0 })
     }
 }
