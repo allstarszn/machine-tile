@@ -76,3 +76,7 @@ touches your own Mac:
 launchctl bootout "gui/$UID/com.machinetile.app"
 rm -rf ~/Applications/"Machine Tile.app" ~/Library/LaunchAgents/com.machinetile.app.plist
 ```
+
+## License
+
+MIT. See [LICENSE](LICENSE).
